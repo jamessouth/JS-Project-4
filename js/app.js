@@ -21,7 +21,8 @@ function Game(players){
     // pages('board');
     // this.board = document.querySelector('.boxes');
     // this.board = ['_', '_', '_', '_', '_', '_', '_', '_', '_'];
-    this.board = null;
+    this.board = 'xxxxxxxxx';
+    this.boxes = null;
     this.players = players;
     this.index = 0;
     this.turns = 0;
@@ -35,6 +36,7 @@ Game.prototype.start = function () {
   const p1input = document.querySelector('#player-1 input');
   const p2input = document.querySelector('#player-2 input');
   const alertP = document.querySelector('#alertP');
+  p1input.focus();
   startButton.addEventListener('click', () => {
     if(p1input.value === '' && p2input.value === ''){
       alertP.textContent = 'Please enter 1 or 2 names';
@@ -45,12 +47,13 @@ Game.prototype.start = function () {
     } else if(p1input.value !== '' && p2input.value === ''){
       this.players[0].name = p1input.value;
       this.players[1].name = 'Computer';
+      this.players[1].cpu = true;
     } else {
       this.players[0].name = p1input.value;
       this.players[1].name = p2input.value;
     }
 
-    console.log(this.players[0].name, this.players[1].name);
+    console.log(this.players[0], this.players[1]);
 
     this.play();
   });
@@ -59,7 +62,13 @@ Game.prototype.start = function () {
 Game.prototype.play = function () {
   HTMLControl(1);
   // console.log(this);
-  this.board = [...document.querySelectorAll('.box')];
+  this.boxes = [...document.querySelectorAll('.box')];
+
+  // this.board = this.board.reduce((str, box) => {
+  //   return str + box.className[box.className.length - 1];
+  // }, '');
+
+
 
   this.players[0].el = document.querySelector('#player1');
   this.players[1].el = document.querySelector('#player2');
@@ -96,11 +105,14 @@ Game.prototype.markXorO = function (e) {
   if(e.target.classList.length > 1){return;}
   e.target.classList.add(`box-filled-${this.index + 1}`);
 
-  // console.log(e.target.className);
+  let index = this.boxes.indexOf(e.target);
+  this.board = this.board.substring(0,index) + (this.index + 1) + this.board.substring(index + 1);
+
+  // console.log(e.target);
   this.players.forEach(x => x.el.classList.toggle('active'));
   this.turns++;
-  console.log(this.currentPlayer, this.turns);
-
+  console.log(this.currentPlayer, this.index);
+  console.log(this.board);
   if(this.turns > 4){
     if(this.checker(this.board)){
       console.log(`${this.index} wins`);
@@ -116,16 +128,77 @@ Game.prototype.markXorO = function (e) {
 
   this.index = 1 - this.index;
   this.currentPlayer = this.players[this.index];
+  if(this.index == 1 && this.turns > 6){
+    console.log(this.minimax(this.board));
+  }
+}
+
+
+Game.prototype.score = function (board, index) {
+  if(this.checker(board)){
+    if(index == 2){
+      return 10;
+    } else {
+      return -10;
+    }
+  } else {
+    if(!board.includes('x')){
+      return 0;
+    }
+  }
+}
+
+
+let player = 1, choice = null;
+
+Game.prototype.minimax = function (board) {
+  debugger;
+  let scores = [], moves = [];
+  player = 3 - player;
+  // console.log(player);
+  if(this.checker(board)){
+    return this.score(board, player);
+  } else {
+    if(!board.includes('x')){
+      return this.score(board, player);
+    }
+  }
+
+  board.split('').forEach((x,i) => {
+    if(x === 'x'){
+      let possibleGame = this.getNewState(board, i, player);
+      scores.push(this.minimax(possibleGame));
+      moves.push(i);
+    }
+  });
+  console.log(board, scores, moves);
+  if(player == 2){
+    let maxScore = Math.max(...scores);
+    choice = moves[scores.indexOf(maxScore)];
+    return [maxScore, choice];
+  } else {
+    let minScore = Math.min(...scores);
+    choice = moves[scores.indexOf(minScore)];
+    return [minScore, choice];
+  }
+
+
+
 
 }
 
+Game.prototype.getNewState = function (board, ind, player) {
+  return board.substring(0,ind) + (player) + board.substring(ind + 1);
+}
+
+
 Game.prototype.checker = function (board) {
-  console.log('run');
+  // console.log('run');
   let wins = [/^(\d)\1\1.+/, /...(\d)\1\1.../, /.+(\d)\1\1$/, /(\d)..\1..\1../, /.(\d)..\1..\1./, /..(\d)..\1..\1/, /(\d)...\1...\1/, /..(\d).\1.\1../];
-  let brd = board.reduce((str, box) => {
-    return str + box.className[box.className.length - 1];
-  }, '');
-  return wins.some(x => x.test(brd));
+  // let brd = board.reduce((str, box) => {
+  //   return str + box.className[box.className.length - 1];
+  // }, '');
+  return wins.some(x => x.test(board));
 
 }
 
@@ -134,6 +207,7 @@ Game.prototype.endScreen = function (index, name) {
     const div = document.querySelector('#finish');
     const p = document.querySelector('.message');
     const sp = document.querySelector('span');
+    const button = document.querySelector('.button');
     if(index){
       div.classList.add(`screen-win-${index}`);
       p.textContent = `Winner:`;
@@ -142,6 +216,13 @@ Game.prototype.endScreen = function (index, name) {
       div.classList.add(`screen-win-tie`);
       p.textContent = "It's a Tie!";
     }
+
+    button.addEventListener('click', function (e) {
+      console.log(e);
+      let players = [new Player(), new Player()];
+      let game = new Game(players);
+      game.start();
+    });
 }
 
 
@@ -152,3 +233,37 @@ Game.prototype.endScreen = function (index, name) {
   let game = new Game(players);
   game.start();
 }();
+
+
+// function glbls(){
+//
+// var differences = {},
+//     exceptions,
+//     globals = {},
+//     ignoreList = (prompt('Ignore filter (comma sep)?', '') || '').split(','),
+//     i = ignoreList.length,
+//     iframe = document.createElement('iframe');
+// while (i--) {
+//   globals[ignoreList[i]] = 1
+// }
+// for (i in window) {
+//   differences[i] = {
+//     'type': typeof window[i],
+//     'val': window[i]
+//   }
+// }
+// iframe.style.display = 'none';
+// document.body.appendChild(iframe);
+// iframe.src = 'about:blank';
+// iframe = iframe.contentWindow || iframe.contentDocument;
+// for (i in differences) {
+//   if (typeof iframe[i] != 'undefined') delete differences[i];
+//   else if (globals[differences[i].type]) delete differences[i]
+// }
+// exceptions = 'addEventListener,document,location,navigator,window'.split(',');
+// i = exceptions.length;
+// while (--i) {
+//   delete differences[exceptions[i]]
+// }
+// console.dir(differences);
+// }
