@@ -11,11 +11,11 @@ function HTMLControl(index){
 
 
 
-function Player(){
-  this.name = null;
-  this.el = null;
-  this.img = null;
-}
+// function Player(){
+//   this.name = null;
+//   this.el = null;
+//   this.img = null;
+// }
 
 function Game(players){
     // pages('board');
@@ -48,6 +48,7 @@ Game.prototype.start = function () {
       this.players[0].name = p1input.value;
       this.players[1].name = 'Computer';
       this.players[1].cpu = true;
+      this.players[1].choice = null;
     } else {
       this.players[0].name = p1input.value;
       this.players[1].name = p2input.value;
@@ -102,10 +103,20 @@ Game.prototype.hoverCtrl = function (e) {
 
 Game.prototype.markXorO = function (e) {
   // console.log(num);
-  if(e.target.classList.length > 1){return;}
-  e.target.classList.add(`box-filled-${this.index + 1}`);
+  let sq = null;
+  if(typeof e === 'object'){
+    console.log('event');
+    sq = e.target;
+  } else {
+    console.log('number');
+    sq = this.boxes[e];
+    sq.style.backgroundImage = `url(${this.currentPlayer.img})`;
+    console.log(sq);
+  }
+  if(sq.classList.length > 1){return;}
+  sq.classList.add(`box-filled-${this.index + 1}`);
 
-  let index = this.boxes.indexOf(e.target);
+  let index = this.boxes.indexOf(sq);
   this.board = this.board.substring(0,index) + (this.index + 1) + this.board.substring(index + 1);
 
   // console.log(e.target);
@@ -128,50 +139,30 @@ Game.prototype.markXorO = function (e) {
 
   this.index = 1 - this.index;
   this.currentPlayer = this.players[this.index];
-  if(this.index == 1 && this.turns > 0){
-    console.log(this.minimax(this.board, true));
-    this.cpuTurn(choice);
-  }
-}
+  // console.log(this.currentPlayer);
+  if(this.currentPlayer.cpu){
 
-Game.prototype.cpuTurn = function (num) {
-  let sq = this.boxes[num];
-  if(sq.classList.length > 1){return;}
-  sq.classList.add(`box-filled-${this.index + 1}`);
-  sq.style.backgroundImage = `url(${this.currentPlayer.img})`;
-  // let index = this.boxes.indexOf(sq);
-  this.board = this.board.substring(0,num) + (this.index + 1) + this.board.substring(num + 1);
-
-  // console.log(sq);
-  this.players.forEach(x => x.el.classList.toggle('active'));
-  this.turns++;
-  // console.log(this.currentPlayer, this.index);
-  // console.log(this.board);
-  if(this.turns > 4){
-    if(this.checker(this.board)){
-      console.log(`${this.index} wins`);
-      this.endScreen(this.index + 1, this.currentPlayer.name);
+    if(this.turns === 1 && this.board === 'xxxx1xxxx'){
+      this.markXorO([0,2,6,8][Math.floor(Math.random() * 4)]);
     } else {
-      // console.log(this.turns);
-      if(this.turns === 9){
-        console.log('draw');
-        this.endScreen();
-      }
+
+
+      this.minimax(this.board, true, this.turns);
+      this.markXorO(this.players[1].choice);
     }
   }
-
-  this.index = 1 - this.index;
-  this.currentPlayer = this.players[this.index];
 }
 
 
-Game.prototype.score = function (board, bool) {
-  // console.log(board, bool);
+
+
+Game.prototype.score = function (board, bool, depth) {
+  // console.log(board, bool, depth);
   if(this.checker(board)){
     if(!bool){
-      return 10;
+      return 10 - depth;
     } else {
-      return -10;
+      return depth - 10;
     }
   } else {
     if(!board.includes('x')){
@@ -181,36 +172,39 @@ Game.prototype.score = function (board, bool) {
 }
 
 
-let player = 1, choice = null;
 
-Game.prototype.minimax = function (board, bool) {
+
+Game.prototype.minimax = function (board, bool, depth) {
   // debugger;
-  // let scores = [], moves = [];
+
   // player = 3 - player;
-  // console.log(board,player);
+  // console.log(board,player, depth);
+
+
+
+
   if(this.checker(board)){
-    return this.score(board, bool);
+    return this.score(board, bool, depth);
   } else {
     if(!board.includes('x')){
-      return this.score(board, bool);
+      return this.score(board, bool, depth);
     }
   }
+  depth++;
+
+
 
   if(bool){
     let bestValue = Number.MIN_SAFE_INTEGER;
     board.split('').forEach((x,i) => {
       if(x === 'x'){
-        let val = this.minimax(this.getNewState(board, i, bool), false);
+        let val = this.minimax(this.getNewState(board, i, bool), false, depth);
         if(val > bestValue){
           bestValue = val;
-          choice = i;
-          // console.log(choice);
+          this.players[1].choice = i;
+
         }
 
-
-        // bestValue = Math.max(bestValue, val);
-        // choice = i;
-        // console.log(i, bool, 'max', bestValue);
       }
     });
 
@@ -219,53 +213,23 @@ Game.prototype.minimax = function (board, bool) {
     let bestValue = Number.MAX_SAFE_INTEGER;
     board.split('').forEach((x,i) => {
       if(x === 'x'){
-        let val = this.minimax(this.getNewState(board, i, bool), true);
+        let val = this.minimax(this.getNewState(board, i, bool), true, depth);
         // bestValue = Math.min(bestValue, val);
         // console.log(i, bool, 'min', bestValue);
 
         if(val < bestValue){
           bestValue = val;
-          choice = i;
-          if(choice == 7){
-            // console.log(choice, val);
-          }
+          this.players[1].choice = i;
+
         }
 
 
       }
     });
-    // console.log(choice);
+
     return bestValue;
 
   }
-
-
-
-
-  // board.split('').forEach((x,i) => {
-  //   if(x === 'x'){
-  //     let possibleGame = this.getNewState(board, i, player);
-  //     console.log(possibleGame);
-  //     console.log(i);
-  //     moves.push(i);
-  //     scores.push(this.minimax(possibleGame));
-  //
-  //   }
-  // });
-
-  // console.log(scores, moves);
-  // if(player == 1){
-  //   let maxScore = Math.max(...scores);
-  //   choice = moves[scores.indexOf(maxScore)];
-  //   return maxScore;
-  // } else {
-  //   let minScore = Math.min(...scores);
-  //   choice = moves[scores.indexOf(minScore)];
-  //   return minScore;
-  // }
-
-
-
 
 }
 
@@ -315,41 +279,49 @@ Game.prototype.endScreen = function (index, name) {
 
 !function(){
 
+  function Player(){
+    this.name = null;
+    this.el = null;
+    this.img = null;
+  }
+
   let players = [new Player(), new Player()];
   let game = new Game(players);
   game.start();
 }();
 
 
-// function glbls(){
-//
-// var differences = {},
-//     exceptions,
-//     globals = {},
-//     ignoreList = (prompt('Ignore filter (comma sep)?', '') || '').split(','),
-//     i = ignoreList.length,
-//     iframe = document.createElement('iframe');
-// while (i--) {
-//   globals[ignoreList[i]] = 1
-// }
-// for (i in window) {
-//   differences[i] = {
-//     'type': typeof window[i],
-//     'val': window[i]
-//   }
-// }
-// iframe.style.display = 'none';
-// document.body.appendChild(iframe);
-// iframe.src = 'about:blank';
-// iframe = iframe.contentWindow || iframe.contentDocument;
-// for (i in differences) {
-//   if (typeof iframe[i] != 'undefined') delete differences[i];
-//   else if (globals[differences[i].type]) delete differences[i]
-// }
-// exceptions = 'addEventListener,document,location,navigator,window'.split(',');
-// i = exceptions.length;
-// while (--i) {
-//   delete differences[exceptions[i]]
-// }
-// console.dir(differences);
-// }
+
+
+function glbls(){
+
+  var differences = {},
+      exceptions,
+      globals = {},
+      ignoreList = (prompt('Ignore filter (comma sep)?', '') || '').split(','),
+      i = ignoreList.length,
+      iframe = document.createElement('iframe');
+  while (i--) {
+    globals[ignoreList[i]] = 1
+  }
+  for (i in window) {
+    differences[i] = {
+      'type': typeof window[i],
+      'val': window[i]
+    }
+  }
+  iframe.style.display = 'none';
+  document.body.appendChild(iframe);
+  iframe.src = 'about:blank';
+  iframe = iframe.contentWindow || iframe.contentDocument;
+  for (i in differences) {
+    if (typeof iframe[i] != 'undefined') delete differences[i];
+    else if (globals[differences[i].type]) delete differences[i]
+  }
+  exceptions = 'addEventListener,document,location,navigator,window'.split(',');
+  i = exceptions.length;
+  while (--i) {
+    delete differences[exceptions[i]]
+  }
+  console.dir(differences);
+}
