@@ -9,5 +9,6 @@ const players = (function(){
   };
 
   return player;
+  
 
 }());
