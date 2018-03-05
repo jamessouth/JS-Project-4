@@ -4,6 +4,7 @@
   game.start();
 }(players, games);
 
+
 // from https://remysharp.com/2007/11/01/detect-global-variables
 // function glbls(){
 //

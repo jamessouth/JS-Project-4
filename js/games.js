@@ -176,4 +176,5 @@ const games = (function(){
   };
 
   return game;
+  
 }());

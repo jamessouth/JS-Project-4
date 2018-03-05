@@ -19,6 +19,7 @@ const utils = (function(){
     let ans = board.substring(0,ind) + (player) + board.substring(ind + 1);
     return ans;
   };
-  
+
   return util;
+  
 }());
