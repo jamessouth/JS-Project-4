@@ -1,2 +1,2 @@
-# JS-Project-4
-OOP tic-tac-toe
+# tic-tac-toe
+OOP tic-tac-toe with minimax algo
